@@ -1,0 +1,4 @@
+﻿src/main.tsx(5,8): error TS1192: Module '"C:/Users/Haziel/Documents/CODE/narrative-forge/frontend/src/router"' has no default export.
+src/router.tsx(3,10): error TS2614: Module '"@/pages/Auth/Login"' has no exported member 'Login'. Did you mean to use 'import Login from "@/pages/Auth/Login"' instead?
+src/router.tsx(4,10): error TS2614: Module '"@/pages/Auth/Register"' has no exported member 'Register'. Did you mean to use 'import Register from "@/pages/Auth/Register"' instead?
+src/router.tsx(7,29): error TS2307: Cannot find module '@/pages/Library' or its corresponding type declarations.
