@@ -10,9 +10,10 @@ import {
   ImageIcon,
   Archive,
 } from 'lucide-react'
+import { useProjectStore } from '@/lib/store/projectStore'
 import { cn } from '@/lib/utils'
 
-/* ── Types ──────────────────────────────────────────────────────── */
+/* ── Global nav items ───────────────────────────────────────────── */
 
 interface GlobalNavItem {
   readonly label: string
@@ -21,74 +22,92 @@ interface GlobalNavItem {
   readonly icon: ReactElement
 }
 
+const GLOBAL_NAV: readonly GlobalNavItem[] = [
+  {
+    label: 'Writing',
+    to: '/writing',
+    icon: <PenLine size={16} strokeWidth={1.5} />,
+  },
+  {
+    label: 'World Builder',
+    to: '/world-builder',
+    icon: <Layers size={16} strokeWidth={1.5} />,
+  },
+  {
+    label: 'Library',
+    to: '/',
+    end: true,
+    icon: <LayoutGrid size={16} strokeWidth={1.5} />,
+  },
+] as const
+
+/* ── Project-contextual nav items ───────────────────────────────── */
+
 interface ProjectNavItem {
   readonly label: string
   readonly to: string
   readonly icon: ReactElement
 }
 
-/* ── Global navigation items ────────────────────────────────────── */
-
-const GLOBAL_NAV: readonly GlobalNavItem[] = [
-  {
-    label: 'Writing',
-    to:    '/writing',
-    icon:  <PenLine size={16} strokeWidth={1.5} />,
-  },
-  {
-    label: 'World Builder',
-    to:    '/world-builder',
-    icon:  <Layers size={16} strokeWidth={1.5} />,
-  },
-  {
-    label: 'Library',
-    to:    '/',
-    end:   true,
-    icon:  <LayoutGrid size={16} strokeWidth={1.5} />,
-  },
-] as const
-
-/*
- * Project-contextual items — these are disabled when no project is
- * open (Phase 1 default). They become active in Block 6 once
- * projectStore tracks the current project.
- *
- * Kept here intentionally to establish the full layout from the
- * start, avoiding a visual "jump" when projects are added.
- */
 const PROJECT_NAV: readonly ProjectNavItem[] = [
   {
     label: 'Chapters',
-    to:    '/writing',
-    icon:  <ScrollText size={16} strokeWidth={1.5} />,
+    to: '/writing',
+    icon: <ScrollText size={16} strokeWidth={1.5} />,
   },
   {
     label: 'Characters',
-    to:    '/world-builder/characters',
-    icon:  <Users size={16} strokeWidth={1.5} />,
+    to: '/world-builder/characters',
+    icon: <Users size={16} strokeWidth={1.5} />,
   },
   {
     label: 'World Lore',
-    to:    '/world-builder/lore',
-    icon:  <Map size={16} strokeWidth={1.5} />,
+    to: '/world-builder/lore',
+    icon: <Map size={16} strokeWidth={1.5} />,
   },
   {
     label: 'Media Assets',
-    to:    '/world-builder/media',
-    icon:  <ImageIcon size={16} strokeWidth={1.5} />,
+    to: '/world-builder/media',
+    icon: <ImageIcon size={16} strokeWidth={1.5} />,
   },
   {
     label: 'Archives',
-    to:    '/world-builder/archives',
-    icon:  <Archive size={16} strokeWidth={1.5} />,
+    to: '/world-builder/archives',
+    icon: <Archive size={16} strokeWidth={1.5} />,
   },
 ] as const
 
+/* ── Shared nav link classes ────────────────────────────────────── */
+
+const linkBase =
+  'flex items-center gap-3 mx-2 py-2.5 pl-4 pr-3 font-label text-sm rounded-r-full transition-all duration-300 select-none'
+
+const linkActive =
+  'bg-nf-surface-highest text-nf-accent font-medium border-l-4 border-nf-accent'
+
+const linkInactive = [
+  'text-nf-text-muted',
+  'border-l-4 border-transparent',
+  'hover:bg-nf-surface-bright/50 hover:translate-x-1',
+  'hover:text-nf-text-secondary',
+  'cursor-pointer',
+].join(' ')
+
+const linkDisabled = [
+  'text-nf-text-disabled',
+  'border-l-4 border-transparent',
+  'opacity-40 cursor-not-allowed pointer-events-none',
+].join(' ')
+
 /* ── Sub-components ─────────────────────────────────────────────── */
 
-function SectionLabel({ children }: { children: string }): ReactElement {
+function SectionLabel({
+  children,
+}: {
+  children: string
+}): ReactElement {
   return (
-    <p className="font-label text-[10px] uppercase tracking-widest text-nf-text-disabled px-4 pt-4 pb-1 select-none">
+    <p className="select-none px-4 pb-1 pt-4 font-label text-[10px] uppercase tracking-widest text-nf-text-disabled">
       {children}
     </p>
   )
@@ -98,41 +117,19 @@ function Divider(): ReactElement {
   return <div className="mx-4 my-2 h-px bg-nf-border-subtle" />
 }
 
-/* ── Active nav link style (Manuscript Drawer from bocetos) ──────
- *
- * Active: surface-highest bg, accent text, left border, rounded-r-full
- * Hover:  subtle bg shift + slight x translation
- * Both states use font-label text-sm, consistent height py-3
- */
-const linkBase =
-  'flex items-center gap-3 mx-2 py-2.5 pl-4 pr-3 font-label text-sm rounded-r-full transition-all duration-300 cursor-pointer select-none'
-
-const linkActive =
-  'bg-nf-surface-highest text-nf-accent font-medium border-l-4 border-nf-accent'
-
-const linkInactive =
-  'text-nf-text-muted border-l-4 border-transparent hover:bg-nf-surface-bright/50 hover:translate-x-1 hover:text-nf-text-secondary'
-
-const linkDisabled =
-  'text-nf-text-disabled border-l-4 border-transparent opacity-40 cursor-not-allowed pointer-events-none'
-
 /* ── Sidebar ────────────────────────────────────────────────────── */
 
 export function Sidebar(): ReactElement {
-  /*
-   * Block 6 will introduce projectStore with currentProjectId.
-   * For now, hasActiveProject is always false — project section
-   * items render as disabled.
-   */
-  const hasActiveProject = false
+  const currentProject = useProjectStore((s) => s.currentProject)
+  const hasActiveProject = currentProject !== null
 
   return (
     <aside
       className={cn(
-        'w-64 shrink-0 h-full flex flex-col',
+        'flex h-full w-64 shrink-0 flex-col',
         'bg-nf-surface-low',
         'shadow-[var(--nf-shadow-sidebar)]',
-        'overflow-y-auto overflow-x-hidden',
+        'overflow-x-hidden overflow-y-auto',
       )}
       aria-label="Sidebar navigation"
     >
@@ -161,29 +158,60 @@ export function Sidebar(): ReactElement {
 
       {/* ── Project context ───────────────────────────────── */}
       <div className="flex-1">
-        <SectionLabel>
-          {hasActiveProject ? 'Current Project' : 'Project'}
-        </SectionLabel>
+        <SectionLabel>Project</SectionLabel>
 
-        {!hasActiveProject && (
-          <p className="font-label text-[10px] italic text-nf-text-disabled px-4 pb-2">
-            No project open
-          </p>
-        )}
-
-        <nav aria-label="Project sections">
-          {PROJECT_NAV.map(({ label, to, icon }) => (
-            <div
-              key={to}
-              className={cn(linkBase, linkDisabled)}
-              aria-disabled="true"
-              role="link"
+        {hasActiveProject ? (
+          /*
+           * Project is open: show its name and enable nav items.
+           * In Block 7+ these links will deep-link into the project.
+           */
+          <>
+            <p
+              title={currentProject.title}
+              className="truncate px-4 pb-2 font-headline italic text-xs text-nf-text-muted"
             >
-              {icon}
-              <span>{label}</span>
+              {currentProject.title}
+            </p>
+
+            <nav aria-label="Project sections">
+              {PROJECT_NAV.map(({ label, to, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(linkBase, isActive ? linkActive : linkInactive)
+                  }
+                >
+                  {icon}
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </nav>
+          </>
+        ) : (
+          /*
+           * No project open: items are disabled and a hint is shown.
+           * User goes to Library → opens a project → items activate.
+           */
+          <>
+            <p className="px-4 pb-2 font-label text-[10px] italic text-nf-text-disabled">
+              No project open
+            </p>
+
+            <div aria-hidden>
+              {PROJECT_NAV.map(({ label, icon }) => (
+                <div
+                  key={label}
+                  className={cn(linkBase, linkDisabled)}
+                  role="presentation"
+                >
+                  {icon}
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </nav>
+          </>
+        )}
       </div>
     </aside>
   )

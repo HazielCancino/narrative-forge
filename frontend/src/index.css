@@ -10,39 +10,73 @@
  * Naming: --color-X generates bg-X, text-X, border-X, ring-X.
  * Naming: --font-X generates font-X.
  */
+
+
+
+:root {
+  /* ── shadcn → nf-* variable bridge ──────────────────────────── */
+  --background: var(--nf-bg);
+  --foreground: var(--nf-text-primary);
+
+  --card: var(--nf-surface);
+  --card-foreground: var(--nf-text-primary);
+
+  --popover: var(--nf-surface-highest);
+  --popover-foreground: var(--nf-text-primary);
+
+  --primary: var(--nf-accent);
+  --primary-foreground: var(--nf-accent-on);
+
+  --secondary: var(--nf-surface-high);
+  --secondary-foreground: var(--nf-text-secondary);
+
+  --muted: var(--nf-surface-low);
+  --muted-foreground: var(--nf-text-muted);
+
+  --accent: var(--nf-surface-bright);
+  --accent-foreground: var(--nf-text-primary);
+
+  --destructive: var(--nf-error);
+  --destructive-foreground: var(--nf-bg);
+
+  --border: var(--nf-border);
+  --input: var(--nf-surface-high);
+  --ring: var(--nf-accent);
+}
+
 @theme inline {
   /* ── Backgrounds → bg-nf-*, border-nf-* ─────────────────── */
-  --color-nf-bg:               var(--nf-bg);
-  --color-nf-surface-lowest:   var(--nf-surface-lowest);
-  --color-nf-surface-low:      var(--nf-surface-low);
-  --color-nf-surface:          var(--nf-surface);
-  --color-nf-surface-high:     var(--nf-surface-high);
-  --color-nf-surface-highest:  var(--nf-surface-highest);
-  --color-nf-surface-bright:   var(--nf-surface-bright);
+  --color-nf-bg: var(--nf-bg);
+  --color-nf-surface-lowest: var(--nf-surface-lowest);
+  --color-nf-surface-low: var(--nf-surface-low);
+  --color-nf-surface: var(--nf-surface);
+  --color-nf-surface-high: var(--nf-surface-high);
+  --color-nf-surface-highest: var(--nf-surface-highest);
+  --color-nf-surface-bright: var(--nf-surface-bright);
 
   /* ── Text → text-nf-* ────────────────────────────────────── */
-  --color-nf-text-primary:     var(--nf-text-primary);
-  --color-nf-text-secondary:   var(--nf-text-secondary);
-  --color-nf-text-muted:       var(--nf-text-muted);
-  --color-nf-text-disabled:    var(--nf-text-disabled);
+  --color-nf-text-primary: var(--nf-text-primary);
+  --color-nf-text-secondary: var(--nf-text-secondary);
+  --color-nf-text-muted: var(--nf-text-muted);
+  --color-nf-text-disabled: var(--nf-text-disabled);
 
   /* ── Accent → text-nf-accent, bg-nf-accent, etc. ─────────── */
-  --color-nf-accent:           var(--nf-accent);
+  --color-nf-accent: var(--nf-accent);
   --color-nf-accent-container: var(--nf-accent-container);
-  --color-nf-accent-fixed:     var(--nf-accent-fixed);
-  --color-nf-accent-on:        var(--nf-accent-on);
-  --color-nf-secondary:        var(--nf-secondary);
-  --color-nf-tertiary:         var(--nf-tertiary);
-  --color-nf-error:            var(--nf-error);
+  --color-nf-accent-fixed: var(--nf-accent-fixed);
+  --color-nf-accent-on: var(--nf-accent-on);
+  --color-nf-secondary: var(--nf-secondary);
+  --color-nf-tertiary: var(--nf-tertiary);
+  --color-nf-error: var(--nf-error);
 
   /* ── Borders → border-nf-border, border-nf-border-subtle ─── */
-  --color-nf-border:           var(--nf-border);
-  --color-nf-border-subtle:    var(--nf-border-subtle);
+  --color-nf-border: var(--nf-border);
+  --color-nf-border-subtle: var(--nf-border-subtle);
 
   /* ── Font families → font-headline, font-body, font-label ── */
-  --font-headline:             var(--nf-font-headline);
-  --font-body:                 var(--nf-font-body);
-  --font-label:                var(--nf-font-label);
+  --font-headline: var(--nf-font-headline);
+  --font-body: var(--nf-font-body);
+  --font-label: var(--nf-font-label);
 }
 
 /* ── Base styles ──────────────────────────────────────────────── */
@@ -66,13 +100,16 @@ body {
   width: 5px;
   height: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--nf-border);
   border-radius: var(--nf-radius-full);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--nf-text-muted);
 }
