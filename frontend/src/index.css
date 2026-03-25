@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import './styles/themes/ethereal-dark.css';
-
+@import './styles/editor.css';
 /*
  * @theme inline: tells Tailwind v4 to keep these as CSS variable
  * references instead of resolving them at build time. This is what
