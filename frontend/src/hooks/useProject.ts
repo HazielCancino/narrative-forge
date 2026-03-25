@@ -54,9 +54,25 @@ export function useCreateProject() {
 
     return useMutation({
         mutationFn: async (input: CreateProjectInput): Promise<Project> => {
+            /*
+             * RLS policy: WITH CHECK (auth.uid() = user_id)
+             * The policy validates that the inserted row's user_id matches
+             * the authenticated user. Without this field the column arrives
+             * as null, the check fails, and Supabase returns a 403.
+             */
+            const {
+                data: { user },
+                error: authError,
+            } = await supabase.auth.getUser()
+
+            if (authError ?? !user) {
+                throw new Error('Not authenticated.')
+            }
+
             const { data, error } = await supabase
                 .from('projects')
                 .insert({
+                    user_id: user.id,
                     title: input.title,
                     genre: input.genre ?? null,
                     description: input.description ?? null,
