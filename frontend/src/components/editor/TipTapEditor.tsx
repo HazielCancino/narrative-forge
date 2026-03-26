@@ -6,10 +6,10 @@ import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
 import Typography from '@tiptap/extension-typography'
 import { EditorToolbar } from './EditorToolbar'
+import { markdownToTiptap, isTipTapJson } from '@/lib/utils/markdownToTiptap'
 
 /* ── Constants ──────────────────────────────────────────────────── */
 
-/** Debounce delay in ms before autosave fires after the user stops typing */
 const AUTOSAVE_DELAY_MS = 1500
 
 /* ── Helpers ────────────────────────────────────────────────────── */
@@ -18,14 +18,32 @@ function countWords(text: string): number {
     return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
 }
 
+/**
+ * Resolves the raw DB string to a value TipTap's setContent accepts.
+ *
+ * - Empty string → '' (TipTap renders the placeholder)
+ * - TipTap JSON  → parsed object (legacy content from before this fix)
+ * - Markdown     → TipTap document JSON via markdownToTiptap()
+ */
+function resolveContent(raw: string): object | string {
+    if (raw.trim() === '') return ''
+
+    if (isTipTapJson(raw)) {
+        try {
+            return JSON.parse(raw) as object
+        } catch {
+            // Malformed JSON — fall through to markdown parser
+        }
+    }
+
+    return markdownToTiptap(raw) ?? ''
+}
+
 /* ── Props ──────────────────────────────────────────────────────── */
 
 interface TipTapEditorProps {
-    /** TipTap JSON string or empty string for a new scene */
     initialContent: string
-    /** Called on every autosave tick with the latest JSON + word count */
     onSave: (content: string, wordCount: number) => void
-    /** Optional placeholder text */
     placeholder?: string
 }
 
@@ -37,22 +55,14 @@ export function TipTapEditor({
     placeholder = 'Begin your scene…',
 }: TipTapEditorProps): ReactElement {
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-    /*
-     * Stable ref to onSave so the debounce closure never captures a
-     * stale version. Without this, updating onSave (e.g. when the
-     * active scene changes) wouldn't take effect until the next mount.
-     */
     const onSaveRef = useRef(onSave)
     useEffect(() => { onSaveRef.current = onSave }, [onSave])
 
-    /* ── Autosave handler ─────────────────────────────────────────── */
+    /* ── Autosave ─────────────────────────────────────────────────── */
 
     const scheduleAutosave = useCallback(
         (json: string, text: string) => {
-            if (debounceTimer.current !== null) {
-                clearTimeout(debounceTimer.current)
-            }
+            if (debounceTimer.current !== null) clearTimeout(debounceTimer.current)
             debounceTimer.current = setTimeout(() => {
                 onSaveRef.current(json, countWords(text))
             }, AUTOSAVE_DELAY_MS)
@@ -62,9 +72,7 @@ export function TipTapEditor({
 
     useEffect(() => {
         return () => {
-            if (debounceTimer.current !== null) {
-                clearTimeout(debounceTimer.current)
-            }
+            if (debounceTimer.current !== null) clearTimeout(debounceTimer.current)
         }
     }, [])
 
@@ -80,19 +88,19 @@ export function TipTapEditor({
             }),
             CharacterCount,
         ],
-        content: initialContent !== '' ? (JSON.parse(initialContent) as object) : '',
+        content: resolveContent(initialContent),
         editorProps: {
             attributes: {
-                /*
-                 * prose-nf: custom class applied via globals.css below.
-                 * We avoid Tailwind's prose plugin to keep full control over
-                 * the serif typography and line-height for the writing view.
-                 */
                 class: 'prose-nf focus:outline-none min-h-[400px]',
                 spellcheck: 'true',
             },
         },
         onUpdate: ({ editor: e }) => {
+            /*
+             * Save as TipTap JSON. This is the canonical format going
+             * forward — new content is always saved as JSON, old markdown
+             * content is converted once on first open via resolveContent().
+             */
             scheduleAutosave(
                 JSON.stringify(e.getJSON()),
                 e.getText(),
@@ -100,26 +108,25 @@ export function TipTapEditor({
         },
     })
 
-    /*
-     * When the user switches scenes, the editor content must change.
-     * We cannot remount the editor (that would reset undo history), so
-     * we use setContent instead. Guard against content-while-focused
-     * conflicts by checking if the parsed content matches the current.
-     */
+    /* ── Content sync when active scene changes ───────────────────── */
+
     useEffect(() => {
         if (!editor) return
-        if (initialContent === '') {
+
+        if (initialContent.trim() === '') {
             editor.commands.clearContent()
             return
         }
-        try {
-            const parsed = JSON.parse(initialContent) as object
-            const current = JSON.stringify(editor.getJSON())
-            if (current !== initialContent) {
-                editor.commands.setContent(parsed)
-            }
-        } catch {
-            // initialContent was not valid JSON — ignore
+
+        const resolved = resolveContent(initialContent)
+        // Only update if the document actually changed to preserve undo history
+        const current = JSON.stringify(editor.getJSON())
+        const incoming = typeof resolved === 'string'
+            ? resolved
+            : JSON.stringify(resolved)
+
+        if (current !== incoming) {
+            editor.commands.setContent(resolved)
         }
     }, [editor, initialContent])
 
@@ -128,12 +135,7 @@ export function TipTapEditor({
     return (
         <div className="flex flex-1 flex-col overflow-hidden">
             <EditorToolbar editor={editor} />
-
             <div className="flex-1 overflow-auto px-16 py-12">
-                {/*
-         * max-w-prose keeps the line length comfortable for long-form
-         * writing (~65–75 chars) — a standard editorial choice.
-         */}
                 <div className="mx-auto max-w-prose">
                     <EditorContent editor={editor} />
                 </div>
