@@ -14,6 +14,7 @@ export interface ProjectContextPayload {
     title: string
     genre: string
     current_scene_title: string
+    current_scene_content?: string | null
 }
 
 /* ── Helpers ────────────────────────────────────────────────────── */
@@ -85,11 +86,12 @@ export function useChat(): UseChatReturn {
                     title: ctx.title,
                     genre: ctx.genre,
                     current_scene_title: ctx.current_scene_title,
+                    current_scene_content: ctx.current_scene_content ?? null,
                     active_characters: [],
                 },
                 model_config: {
                     provider: 'ollama',
-                    model: 'llama3',
+                    model: 'qwen2.5:14b-instruct-q4_K_M',  // was: 'llama3'
                     temperature: 0.8,
                     api_base: 'http://localhost:11434',
                 },

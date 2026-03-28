@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # LLM defaults
     default_llm_provider: str = "ollama"
+    default_llm_model: str = "qwen2.5:14b-instruct-q4_K_M"
     ollama_base_url: str = "http://localhost:11434"
 
     # Image generation (optional)

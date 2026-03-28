@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from app.core.security import get_current_user_id
 from app.services.context_service import (
-    ActiveCharacter,
+    CharacterInfo,
     ProjectContext,
     build_system_prompt,
 )
@@ -49,6 +49,7 @@ class ProjectContextIn(BaseModel):
     title: str
     genre: str = ""
     current_scene_title: str = ""
+    current_scene_content: str | None = None
     active_characters: list[ActiveCharacterIn] = []
 
 
@@ -99,8 +100,9 @@ async def _generate(
         title=request.project_context.title,
         genre=request.project_context.genre,
         current_scene_title=request.project_context.current_scene_title,
+        current_scene_content=request.project_context.current_scene_content,
         active_characters=[
-            ActiveCharacter(name=c.name, personality=c.personality)
+            CharacterInfo(name=c.name, personality=c.personality)
             for c in request.project_context.active_characters
         ],
     )

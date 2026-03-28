@@ -11,6 +11,7 @@ interface ManuscriptAIProps {
     projectTitle: string
     projectGenre: string
     sceneTitle: string
+    sceneContent?: string
 }
 
 /* ── ManuscriptAI ───────────────────────────────────────────────── */
@@ -19,6 +20,7 @@ export function ManuscriptAI({
     projectTitle,
     projectGenre,
     sceneTitle,
+    sceneContent,
 }: ManuscriptAIProps): ReactElement {
     const [input, setInput] = useState('')
     const bottomRef = useRef<HTMLDivElement>(null)
@@ -41,6 +43,7 @@ export function ManuscriptAI({
             title: projectTitle,
             genre: projectGenre,
             current_scene_title: sceneTitle,
+            current_scene_content: sceneContent ?? null,
         })
 
         setInput('')

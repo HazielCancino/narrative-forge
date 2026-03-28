@@ -1,9 +1,11 @@
 import type { ReactElement } from 'react'
-import { useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BookOpen, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TipTapEditor } from '@/components/editor/TipTapEditor'
+import type { JSONContent } from '@tiptap/react'
+import { extractPlainText } from '@/lib/utils/extractText'
 import { SceneList } from '@/components/editor/SceneList'
 import { ManuscriptAI } from '@/components/chat/ManuscriptAI'
 import { useProjectStore } from '@/lib/store/projectStore'
@@ -11,6 +13,7 @@ import { useUIStore } from '@/lib/store/uiStore'
 import { useScenes, useSaveSceneContent } from '@/hooks/useScene'
 import { cn } from '@/lib/utils'
 import type { Scene } from '@/types/database'
+
 
 /* ── No-project state ───────────────────────────────────────────── */
 
@@ -66,6 +69,28 @@ export function WritingPage(): ReactElement {
 
   const [activeScene, setActiveScene] = useState<Scene | null>(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [editorContent, setEditorContent] = useState<JSONContent | null>(null)
+
+  // Initialize editorContent from the active scene whenever the scene changes.
+  // This ensures sceneText is populated immediately on scene load, not only
+  // after the user types something and autosave fires.
+  useEffect(() => {
+    if (!activeScene?.content) {
+      setEditorContent(null)
+      return
+    }
+    try {
+      setEditorContent(JSON.parse(activeScene.content) as JSONContent)
+    } catch {
+      // Content is plain text or markdown — sceneText will update
+      // once the user types and autosave fires for the first time.
+      setEditorContent(null)
+    }
+  }, [activeScene?.id])  // intentionally only activeScene.id, not the full object
+  const sceneText = useMemo(
+    () => extractPlainText(editorContent),
+    [editorContent],
+  )
 
   const { data: scenes = [], isLoading } = useScenes(
     currentProject?.id ?? null,
@@ -91,6 +116,14 @@ export function WritingPage(): ReactElement {
         },
       )
       setTokenCount(Math.round(wordCount * 1.3))
+
+      // Parse the saved JSON string back into JSONContent so sceneText
+      // stays in sync with whatever the autosave just persisted.
+      try {
+        setEditorContent(JSON.parse(content) as JSONContent)
+      } catch {
+        // If content is plain text or unparseable, leave sceneText as-is
+      }
     },
     [activeScene, saveContent, setSyncStatus, setTokenCount],
   )
@@ -173,6 +206,7 @@ export function WritingPage(): ReactElement {
             projectTitle={currentProject.title}
             projectGenre={currentProject.genre ?? ''}
             sceneTitle={activeScene?.title ?? ''}
+            sceneContent={sceneText}
           />
         )}
       </div>
